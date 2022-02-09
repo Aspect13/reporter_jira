@@ -48,11 +48,169 @@ const jiraInitialState = () => ({
     errors: {},
 })
 
-const jiraApp = Vue.createApp({
+const jiraApp = {
     delimiters: ['[[', ']]'],
     data() {
         return jiraInitialState()
     },
+    template: `<div class="col-6 security_integration_item" data-name="reporter_jira" id="reporter_jira">
+    <div class="card card-row-1">
+        <div class="card-header">
+            <div class="d-flex">
+                <h9 class="flex-grow-1" style="line-height: 24px">Jira</h9>
+                <button type="button" class="btn btn-24 btn-action" data-toggle="collapse"
+                        data-target="#settings_reporter_jira" aria-expanded="false"><i class="fas fa-cog"></i>
+                </button>
+                <label class="custom-toggle">
+                    <input type="checkbox" data-target="#selector_reporter_jira" aria-expanded="false"
+                           data-toggle="collapse"
+                           class="integration_checkbox" id="integration_checkbox_reporter_jira">
+                    <span class="custom-toggle-slider rounded-circle"></span>
+                </label>
+            </div>
+        </div>
+        <div class="row">
+            <div class="collapse col-12 mb-3 pl-0" id="selector_reporter_jira">
+                <select class="selectpicker" data-style="btn-secondary">
+                    <slot></slot>
+                </select>
+            </div>
+        </div>
+        <div class="row">
+            <div class="collapse col-12 mb-3 p-0" id="settings_reporter_jira">
+                <div class="row">
+                    <h7>Advanced Settings</h7>
+                </div>
+
+                <div class="row mt-2">
+                    <div class="col">
+                        <h9>Jira fields</h9>
+                        <p>
+                            <h13>For all</h13>
+                        </p>
+                    </div>
+                    <button class="btn btn-primary btn-37"
+                            @click.prevent="add_jira_field"
+                    ><i class="fa fa-plus"></i></button>
+                </div>
+
+                <div class="row">
+                    <jira-field
+                            v-for="(item, index) in fields"
+                            v-model:field_key="item.key"
+                            v-model:field_value="item.value"
+                            :index="index"
+                            @remove="removeJiraField"
+                    ></jira-field>
+                </div>
+
+                <div class="row mt-2">
+                    <div class="col-12 p-0">
+                        <h9>Change priority mapping</h9>
+                        <p>
+                            <h13>Description</h13>
+                        </p>
+                    </div>
+                    <div class="row">
+                        <jira-priority-mapping
+                                v-for="k in Object.keys(priority_mapping)"
+                                :field_key="k"
+                                v-model:field_value="priority_mapping[k]"
+                        ></jira-priority-mapping>
+                    </div>
+                </div>
+
+                <div class="row mt-2">
+                    <div class="col-12 p-0">
+                        <h9>Limits</h9>
+                        <p>
+                            <h13>Description</h13>
+                        </p>
+                    </div>
+                    <div class="row col-12 p-0">
+                        <div class="col">
+                            <label>
+                                <h9>Max description size</h9>
+                                <input type="number" placeholder="Value"
+                                       class="form-control form-control-alternative"
+                                       v-model="limits.max_description_size"
+                                       :class="{ 'is-invalid': errors.max_description_size }"
+                                />
+                                <div class="invalid-feedback">[[ errors.max_description_size ]]</div>
+                            </label>
+
+                        </div>
+                        <div class="col">
+                            <label>
+                                <h9>Max comment size</h9>
+                                <input type="number" placeholder="Value"
+                                       class="form-control form-control-alternative"
+                                       v-model="limits.max_comment_size"
+                                       :class="{ 'is-invalid': errors.max_comment_size }"
+                                />
+                                <div class="invalid-feedback">[[ errors.max_comment_size ]]</div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="row mt-2">
+                    <div class="col">
+                        <h9>Dynamic fields</h9>
+                        <p>
+                            <h13>Description</h13>
+                        </p>
+                    </div>
+                    <button class="btn btn-primary btn-37"
+                            @click.prevent="add_dynamic_field"
+                    ><i class="fa fa-plus"></i></button>
+                </div>
+                <div class="row">
+                    <jira-dynamic-field
+                            v-for="(item, index) in dynamic_fields"
+                            v-model:field_condition="item.condition"
+                            v-model:field_key="item.key"
+                            v-model:field_value="item.value"
+                            :index="index"
+                            @remove="removeDynamicField"
+                    ></jira-dynamic-field>
+                </div>
+
+                <div class="mt-3">
+
+                    <div class="form-check">
+                        <label>
+                            <input type="checkbox" class="form-check-input"
+                                   v-model="separate_epic_linkage"
+                            >
+                            <h9>Separate epic linkage</h9>
+                        </label>
+                    </div>
+
+                    <div class="form-check">
+                        <label>
+                            <input type="checkbox" class="form-check-input"
+                                   v-model="use_another_jira"
+                            >
+                            <h9>Use another jira</h9>
+                        </label>
+                    </div>
+
+                    <div class="form-check">
+                        <label>
+                            <input type="checkbox" class="form-check-input"
+                                   v-model="reopen_if_closed"
+                            >
+                            <h9>Reopen if closed</h9>
+                        </label>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>`,
     computed: {
         body_data() {
             const data = { ...this.$data }
@@ -93,9 +251,9 @@ const jiraApp = Vue.createApp({
 
         },
     },
-})
+}
 
-jiraApp.component('jira-field', {
+const JiraField = {
     props: ['field_key', 'field_value', 'index'],
     emits: ['remove', 'update:field_key', 'update:field_value'],
     delimiters: ['[[', ']]'],
@@ -124,9 +282,9 @@ jiraApp.component('jira-field', {
             </div>
         </div>
     `
-})
+}
 
-jiraApp.component('jira-priority-mapping', {
+const JiraPriorityMapping = {
     props: ['field_key', 'field_value'],
     emits: ['update:field_key', 'update:field_value'],
     delimiters: ['[[', ']]'],
@@ -142,9 +300,9 @@ jiraApp.component('jira-priority-mapping', {
             </label>
         </div>
     `
-})
+}
 
-jiraApp.component('jira-dynamic-field', {
+const JiraDynamicField = {
     props: ['field_condition', 'field_key', 'field_value', 'index'],
     emits: ['remove', 'update:field_condition', 'update:field_key', 'update:field_value'],
     delimiters: ['[[', ']]'],
@@ -180,7 +338,13 @@ jiraApp.component('jira-dynamic-field', {
             </div>
         </div>
     `
-})
+}
 
-jiraApp.config.compilerOptions.isCustomElement = tag => ['h9', 'h13', 'h7'].includes(tag)
-const jiraVm = jiraApp.mount('#reporter_jira')
+// jiraApp.config.compilerOptions.isCustomElement = tag => ['h9', 'h13', 'h7'].includes(tag)
+// const jiraVm = jiraApp.mount('#reporter_jira')
+$.when(vueApp).then(() => {
+    vueApp.component('JiraApp', jiraApp)
+    vueApp.component('JiraField', JiraField)
+    vueApp.component('JiraPriorityMapping', JiraPriorityMapping)
+    vueApp.component('JiraDynamicField', JiraDynamicField)
+})
