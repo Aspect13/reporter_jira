@@ -49,7 +49,7 @@ class Module(module.ModuleModel):
             name=SECTION_NAME,
             integration_description='Manage reporters',
             test_planner_description='Specify reporters. You may also set reporters in <a '
-                                     'href="/?chapter=Configuration&module=Integrations&page=all">Integrations</a> '
+                                     'href="/configuration/integrations">Integrations</a> '
         )
 
         self.context.rpc_manager.call.integrations_register(
